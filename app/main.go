@@ -42,6 +42,22 @@ func main() {
 					},
 				},
 			},
+			Tools: []openai.ChatCompletionToolUnionParam{
+				openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+					Name:        "Read",
+					Description: openai.String("Read and return the content of the file"),
+					Parameters: openai.FunctionParameters{
+						"type": "object",
+						"properties": map[string]any{
+							"file_path": map[string]any{
+								"type":        "string",
+								"description": "the path of the file to read",
+							},
+						},
+						"required": []string{"file_path"},
+					},
+				}),
+			},
 		},
 	)
 	if err != nil {
@@ -52,9 +68,7 @@ func main() {
 		panic("No choices in response")
 	}
 
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
-	// TODO: Uncomment the line below to pass the first stage
 	fmt.Print(resp.Choices[0].Message.Content)
 }
