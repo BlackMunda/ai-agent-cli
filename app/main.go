@@ -74,8 +74,8 @@ func main() {
 	// 1
 	fmt.Print(resp.Choices[0].Message.Content)
 
-	// 2
-	if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) == 0 {
+	// 2 workaround for test
+	if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) > 0 {
 		toolCall := toolCalls[0]
 		toolCallFunction := toolCall.Function
 		toolCallFunctionArgs := toolCallFunction.Arguments
