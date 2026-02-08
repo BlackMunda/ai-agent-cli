@@ -67,8 +67,6 @@ func main() {
 }
 
 func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParamUnion, tools []openai.ChatCompletionToolUnionParam) (string, error) {
-	n := 0
-
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
 			openai.ChatCompletionNewParams{
@@ -133,10 +131,10 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 						},
 					},
 				)
+
 			}
 		} else {
 			return string(data), nil
 		}
-		n++
 	}
 }
