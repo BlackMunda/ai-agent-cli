@@ -57,7 +57,7 @@ func main() {
 		}),
 	}
 
-	result, err := gameLoop(client, messages, tools)
+	result, err := gameLoop(&client, messages, tools)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -66,7 +66,7 @@ func main() {
 	fmt.Fprintln(os.Stdout, result)
 }
 
-func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParamUnion, tools []openai.ChatCompletionToolUnionParam) (string, error) {
+func gameLoop(client *openai.Client, messages []openai.ChatCompletionMessageParamUnion, tools []openai.ChatCompletionToolUnionParam) (string, error) {
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
 			openai.ChatCompletionNewParams{
@@ -78,37 +78,29 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 		if err != nil {
 			return "", err
 		}
-
 		if len(resp.Choices) == 0 {
 			panic("No choices in response")
 		}
 
 		fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-
-		// 1
 		fmt.Print(resp.Choices[0].Message.Content)
 
-		// 2 workaround for test.
-		messages = append(messages,
-			openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					Content: openai.ChatCompletionAssistantMessageParamContentUnion{
-						OfString: openai.String(resp.Choices[0].Message.Content),
-					},
-				},
-			},
-		)
-
-		var data []byte
-
-		// rangeover toolcalls
 		if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) > 0 {
-			for i := range toolCalls {
-				toolCall := toolCalls[i]
-				toolCallFunction := toolCall.Function
-				toolCallFunctionArgs := toolCallFunction.Arguments
 
-				// only doing Read here as for now without even looking the name of function
+			paramToolCalls := make([]openai.ChatCompletionMessageToolCallUnionParam, len(toolCalls))
+			for i, tc := range toolCalls {
+				paramToolCalls[i] = tc.ToParam()
+			}
+
+			messages = append(messages, openai.ChatCompletionMessageParamUnion{
+				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+					ToolCalls: paramToolCalls,
+				},
+			})
+
+			for _, toolCall := range toolCalls {
+				toolCallFunctionArgs := toolCall.Function.Arguments
+
 				var jsonArgs struct {
 					FilePath string `json:"file_path"`
 				}
@@ -117,25 +109,23 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 					return "", err
 				}
 
-				data, err = os.ReadFile(jsonArgs.FilePath)
+				data, err := os.ReadFile(jsonArgs.FilePath)
 				if err != nil {
 					return "", err
 				}
 
-				messages = append(messages,
-					openai.ChatCompletionMessageParamUnion{
-						OfTool: &openai.ChatCompletionToolMessageParam{
-							ToolCallID: toolCall.ID,
-							Content: openai.ChatCompletionToolMessageParamContentUnion{
-								OfString: openai.String(string(data)),
-							},
+				// Add tool result
+				messages = append(messages, openai.ChatCompletionMessageParamUnion{
+					OfTool: &openai.ChatCompletionToolMessageParam{
+						ToolCallID: toolCall.ID,
+						Content: openai.ChatCompletionToolMessageParamContentUnion{
+							OfString: openai.String(string(data)),
 						},
 					},
-				)
-
+				})
 			}
 		} else {
-			return string(data), nil
+			return resp.Choices[0].Message.Content, nil
 		}
 	}
 }
