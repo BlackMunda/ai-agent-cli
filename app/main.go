@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -70,5 +71,25 @@ func main() {
 
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
+	// 1
 	fmt.Print(resp.Choices[0].Message.Content)
+
+	// 2
+	toolCall := resp.Choices[0].Message.ToolCalls[0]
+	toolCallFunction := toolCall.Function
+	toolCallFunctionArgs := toolCallFunction.Arguments
+
+	var jsonArgs struct {
+		FilePath string `json:"file_path"`
+	}
+	err = json.Unmarshal([]byte(toolCallFunctionArgs), &jsonArgs)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	}
+
+	data, err := os.ReadFile(jsonArgs.FilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	}
+	fmt.Println(string(data))
 }
