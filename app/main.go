@@ -75,6 +75,11 @@ func main() {
 	fmt.Print(resp.Choices[0].Message.Content)
 
 	// 2
+	if len(resp.Choices[0].Message.ToolCalls) == 0 {
+		fmt.Println("No tool calls present!!")
+		os.Exit(1)
+	}
+
 	toolCall := resp.Choices[0].Message.ToolCalls[0]
 	toolCallFunction := toolCall.Function
 	toolCallFunctionArgs := toolCallFunction.Arguments
