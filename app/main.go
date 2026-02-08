@@ -103,15 +103,6 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 
 		// rangeover toolcalls
 		if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) > 0 {
-
-			messages = append(messages,
-				openai.ChatCompletionMessageParamUnion{
-					OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-						ToolCalls: toolCalls,
-					},
-				},
-			)
-
 			for i := range toolCalls {
 				toolCall := toolCalls[i]
 				toolCallFunction := toolCall.Function
@@ -144,14 +135,6 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 
 			}
 		} else {
-			messages = append(messages, openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					Content: openai.ChatCompletionAssistantMessageParamContentUnion{
-						OfString: openai.String(resp.Choices[0].Message.Content),
-					},
-				},
-			},
-			)
 			return string(data), nil
 		}
 	}
