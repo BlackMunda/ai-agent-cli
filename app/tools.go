@@ -52,7 +52,7 @@ func bashTool(args string) (string, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("bash", "-c", jsonArgs.Command)
+	cmd := exec.Command("sh", "-c", jsonArgs.Command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", err
