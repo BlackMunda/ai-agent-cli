@@ -75,26 +75,23 @@ func main() {
 	fmt.Print(resp.Choices[0].Message.Content)
 
 	// 2
-	if len(resp.Choices[0].Message.ToolCalls) == 0 {
-		fmt.Println("No tool calls present!!")
-		os.Exit(0)
-	}
+	if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) == 0 {
+		toolCall := toolCalls[0]
+		toolCallFunction := toolCall.Function
+		toolCallFunctionArgs := toolCallFunction.Arguments
 
-	toolCall := resp.Choices[0].Message.ToolCalls[0]
-	toolCallFunction := toolCall.Function
-	toolCallFunctionArgs := toolCallFunction.Arguments
+		var jsonArgs struct {
+			FilePath string `json:"file_path"`
+		}
+		err = json.Unmarshal([]byte(toolCallFunctionArgs), &jsonArgs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		}
 
-	var jsonArgs struct {
-		FilePath string `json:"file_path"`
+		data, err := os.ReadFile(jsonArgs.FilePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		}
+		fmt.Println(string(data))
 	}
-	err = json.Unmarshal([]byte(toolCallFunctionArgs), &jsonArgs)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-	}
-
-	data, err := os.ReadFile(jsonArgs.FilePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-	}
-	fmt.Println(string(data))
 }
