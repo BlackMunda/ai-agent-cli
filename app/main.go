@@ -77,7 +77,7 @@ func main() {
 	// 2
 	if len(resp.Choices[0].Message.ToolCalls) == 0 {
 		fmt.Println("No tool calls present!!")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	toolCall := resp.Choices[0].Message.ToolCalls[0]
