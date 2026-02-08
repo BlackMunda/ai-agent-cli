@@ -83,7 +83,6 @@ func gameLoop(client *openai.Client, messages []openai.ChatCompletionMessagePara
 		}
 
 		fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-		fmt.Print(resp.Choices[0].Message.Content)
 
 		if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) > 0 {
 
