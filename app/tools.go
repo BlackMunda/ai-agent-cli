@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 )
 
 func readTool(args string) (string, error) {
@@ -38,5 +39,24 @@ func writeTool(args string) error {
 		return err
 	}
 
-	return err
+	return nil
+}
+
+func bashTool(args string) (string, error) {
+	var jsonArgs struct {
+		Command string `json:"command"`
+	}
+
+	err := json.Unmarshal([]byte(args), &jsonArgs)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("bash", "-c", jsonArgs.Command)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
 }

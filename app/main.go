@@ -31,6 +31,7 @@ func main() {
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
+	// for prompt
 	messages := []openai.ChatCompletionMessageParamUnion{
 		{
 			OfUser: &openai.ChatCompletionUserMessageParam{
@@ -40,6 +41,8 @@ func main() {
 			},
 		},
 	}
+
+	// for tools(executing)
 	tools := []openai.ChatCompletionToolUnionParam{
 		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
 			Name:        "Read",
@@ -70,6 +73,21 @@ func main() {
 					"content": map[string]any{
 						"type":        "string",
 						"description": "the content to write to the file",
+					},
+				},
+			},
+		}),
+
+		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+			Name:        "Bash",
+			Description: openai.String("Execute a shell command"),
+			Parameters: openai.FunctionParameters{
+				"type":     "object",
+				"required": []string{"command"},
+				"properties": map[string]any{
+					"command": map[string]any{
+						"type":        "string",
+						"description": "the command to execute",
 					},
 				},
 			},
@@ -135,6 +153,13 @@ func gameLoop(client *openai.Client, messages []openai.ChatCompletionMessagePara
 					if err != nil {
 						return "", err
 					}
+
+				case "Bash":
+					value, err := bashTool(toolCallFunctionArgs)
+					if err != nil {
+						return "", err
+					}
+					data = value
 				}
 
 				// Add tool result
