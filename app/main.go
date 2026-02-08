@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -31,6 +30,7 @@ func main() {
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
+
 	messages := []openai.ChatCompletionMessageParamUnion{
 		{
 			OfUser: &openai.ChatCompletionUserMessageParam{
@@ -53,6 +53,25 @@ func main() {
 					},
 				},
 				"required": []string{"file_path"},
+			},
+		}),
+
+		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+			Name:        "Write",
+			Description: openai.String("Write content to the file"),
+			Parameters: openai.FunctionParameters{
+				"type":     "object",
+				"required": []string{"file_path", "content"},
+				"properties": map[string]any{
+					"file_path": map[string]any{
+						"type":        "string",
+						"description": "the path of the file to write to",
+					},
+					"content": map[string]any{
+						"type":        "string",
+						"description": "the content to write to the file",
+					},
+				},
 			},
 		}),
 	}
@@ -98,19 +117,24 @@ func gameLoop(client *openai.Client, messages []openai.ChatCompletionMessagePara
 			})
 
 			for _, toolCall := range toolCalls {
-				toolCallFunctionArgs := toolCall.Function.Arguments
+				toolCallFunction := toolCall.Function
+				toolCallFunctionArgs := toolCallFunction.Arguments
 
-				var jsonArgs struct {
-					FilePath string `json:"file_path"`
-				}
-				err = json.Unmarshal([]byte(toolCallFunctionArgs), &jsonArgs)
-				if err != nil {
-					return "", err
-				}
+				var data string
 
-				data, err := os.ReadFile(jsonArgs.FilePath)
-				if err != nil {
-					return "", err
+				switch toolCallFunction.Name {
+				case "Read":
+					value, err := readTool(toolCallFunctionArgs)
+					if err != nil {
+						return "", err
+					}
+					data = value
+
+				case "Write":
+					err := writeTool(toolCallFunctionArgs)
+					if err != nil {
+						return "", err
+					}
 				}
 
 				// Add tool result
@@ -118,7 +142,7 @@ func gameLoop(client *openai.Client, messages []openai.ChatCompletionMessagePara
 					OfTool: &openai.ChatCompletionToolMessageParam{
 						ToolCallID: toolCall.ID,
 						Content: openai.ChatCompletionToolMessageParamContentUnion{
-							OfString: openai.String(string(data)),
+							OfString: openai.String(data),
 						},
 					},
 				})
