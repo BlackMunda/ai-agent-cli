@@ -88,20 +88,30 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 		// 1
 		fmt.Print(resp.Choices[0].Message.Content)
 
-		// 2 workaround for test
-		messages = append(messages, openai.ChatCompletionMessageParamUnion{
-			OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-				Content: openai.ChatCompletionAssistantMessageParamContentUnion{
-					OfString: openai.String(resp.Choices[0].Message.Content),
+		// 2 workaround for test.
+		messages = append(messages,
+			openai.ChatCompletionMessageParamUnion{
+				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+					Content: openai.ChatCompletionAssistantMessageParamContentUnion{
+						OfString: openai.String(resp.Choices[0].Message.Content),
+					},
 				},
 			},
-		},
 		)
 
 		var data []byte
 
 		// rangeover toolcalls
 		if toolCalls := resp.Choices[0].Message.ToolCalls; len(toolCalls) > 0 {
+
+			messages = append(messages,
+				openai.ChatCompletionMessageParamUnion{
+					OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+						ToolCalls: toolCalls,
+					},
+				},
+			)
+
 			for i := range toolCalls {
 				toolCall := toolCalls[i]
 				toolCallFunction := toolCall.Function
@@ -134,6 +144,14 @@ func gameLoop(client openai.Client, messages []openai.ChatCompletionMessageParam
 
 			}
 		} else {
+			messages = append(messages, openai.ChatCompletionMessageParamUnion{
+				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+					Content: openai.ChatCompletionAssistantMessageParamContentUnion{
+						OfString: openai.String(resp.Choices[0].Message.Content),
+					},
+				},
+			},
+			)
 			return string(data), nil
 		}
 	}
