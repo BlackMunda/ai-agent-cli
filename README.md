@@ -1,34 +1,42 @@
-[![progress-banner](https://backend.codecrafters.io/progress/claude-code/f3447485-c726-4910-bfa9-3ceec0948211)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# ai-agent-cli
 
-This is a starting point for Go solutions to the
-["Build Your own Claude Code" Challenge](https://codecrafters.io/challenges/claude-code).
+A terminal-based AI coding agent built in Go. It uses the Anthropic API to understand your codebase and perform actions through tool calls — think a lightweight Claude Code you built yourself.
 
-Claude Code is an AI coding assistant that uses Large Language Models (LLMs) to
-understand code and perform actions through tool calls. In this challenge,
-you'll build your own Claude Code from scratch by implementing an LLM-powered
-coding assistant.
+## What it does
 
-Along the way you'll learn about HTTP RESTful APIs, OpenAI-compatible tool
-calling, agent loop, and how to integrate multiple tools into an AI assistant.
+- Talks to an LLM via HTTP (OpenAI-compatible API)
+- Executes tool calls returned by the model (bash commands, file reads/writes, etc.)
+- Runs an agent loop — keeps going until the task is complete
+- Works entirely from your terminal
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Tech Stack
 
-# Passing the first stage
+- **Language:** Go
+- **API:** Anthropic / OpenAI-compatible REST API
+- **Tools:** Bash execution, file system operations
 
-The entry point for your `claude-code` implementation is in `app/main.go`. Study
-and uncomment the relevant code, and submit to pass the first stage:
+## Getting Started
 
-```sh
-codecrafters submit
+### Prerequisites
+
+- Go 1.21+
+- An Anthropic API key (or compatible LLM API key)
+
+### Run
+
+```bash
+go build -o agent ./app
+./agent
 ```
 
-# Stage 2 & beyond
+## Project Structure
 
-Note: This section is for stages 2 and beyond.
+```
+app/
+├── main.go      # Entry point, agent loop
+└── tools.go     # Tool definitions and execution
+```
 
-1. Ensure you have `go (1.25)` installed locally.
-2. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.go`.
-3. Run `codecrafters submit` to submit your solution to CodeCrafters. Test
-   output will be streamed to your terminal.
+## How it works
+
+The agent sends your prompt to the LLM, receives a response with tool calls, executes those tools locally, feeds the results back to the model, and repeats until the task is done. It's the same core loop that powers tools like Claude Code and Cursor.
